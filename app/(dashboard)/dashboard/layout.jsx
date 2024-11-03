@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Users,
   ClipboardCheck,
+  Video,
   BarChart2,
   Settings,
   Menu,
@@ -21,6 +22,7 @@ const sidebarItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Candidates", href: "/dashboard/candidates", icon: Users },
   { name: "Assessments", href: "/dashboard/assessments", icon: ClipboardCheck },
+  { name: "Rooms", href: "/dashboard/rooms", icon: Video },
   { name: "Reports", href: "/dashboard/reports", icon: BarChart2 },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
