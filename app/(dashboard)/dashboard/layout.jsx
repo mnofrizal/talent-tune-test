@@ -13,6 +13,7 @@ import {
   Settings,
   Menu,
   X,
+  Calendar,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ const sidebarItems = [
   { name: "Rooms", href: "/dashboard/rooms", icon: Video },
   { name: "Reports", href: "/dashboard/reports", icon: BarChart2 },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  { name: "My Schedule", href: "/dashboard/my-schedule", icon: Calendar },
 ];
 
 const sidebarVariants = {

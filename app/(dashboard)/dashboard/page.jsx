@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
-  Plus,
   User,
   Users,
 } from "lucide-react";
@@ -15,6 +14,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { NewAssessmentDialog } from "@/components/new-assesment";
 
 const statusCards = [
   {
@@ -82,9 +82,7 @@ export default function DashboardPage() {
         transition={{ duration: 0.5, delay: 0.1 }}
         className="flex gap-4"
       >
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" /> New Assessment
-        </Button>
+        <NewAssessmentDialog />
         <Button variant="outline">View Reports</Button>
       </motion.div>
 
