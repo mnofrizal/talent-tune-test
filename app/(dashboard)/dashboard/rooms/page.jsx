@@ -63,9 +63,16 @@ export default function RoomsPage() {
     }
   }
 
-  const filteredAssessments = assessments.filter((assessment) =>
-    assessment.judul?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredAssessments = assessments
+    .flatMap((assessment) =>
+      assessment.participants.map((participant) => ({
+        ...assessment,
+        participant,
+      }))
+    )
+    .filter((assessment) =>
+      assessment.judul?.toLowerCase().includes(search.toLowerCase())
+    );
 
   const handleRoomClick = (room) => {
     setSelectedRoom(room);
@@ -178,9 +185,9 @@ export default function RoomsPage() {
               <p className="text-muted-foreground">No assessments found</p>
             </div>
           ) : (
-            filteredAssessments.map((assessment) => (
+            filteredAssessments.map((assessment, index) => (
               <motion.div
-                key={assessment.id}
+                key={index}
                 layout
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -199,23 +206,26 @@ export default function RoomsPage() {
                     </CardTitle>
                     <span
                       className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                        assessment.participants[0]?.status
+                        assessment.participant.status
                       )}`}
                     >
-                      {assessment.participants[0]?.status || "N/A"}
+                      {assessment.participant.status || "N/A"}
                     </span>
                   </CardHeader>
                   <CardContent>
                     <div className="text-4xl font-bold">
-                      {assessment.participants[0]?.schedule
+                      {assessment.participant.schedule
                         ? format(
-                            new Date(assessment.participants[0].schedule),
+                            new Date(assessment.participant.schedule),
                             "dd MMM"
                           )
                         : "N/A"}
                     </div>
                     <p className="mt-2 text-sm text-muted-foreground">
                       {assessment.materi}
+                    </p>
+                    <p className="mt-2 text-sm">
+                      Participant: {assessment.participant.user?.name || "N/A"}
                     </p>
                   </CardContent>
                   <CardFooter>
@@ -250,16 +260,17 @@ export default function RoomsPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <p>
+              <strong>Participant:</strong>{" "}
+              {selectedRoom?.participant.user?.name || "N/A"}
+            </p>
+            <p>
               <strong>Status:</strong>{" "}
-              {selectedRoom?.participants[0]?.status || "N/A"}
+              {selectedRoom?.participant.status || "N/A"}
             </p>
             <p>
               <strong>Schedule:</strong>{" "}
-              {selectedRoom?.participants[0]?.schedule
-                ? format(
-                    new Date(selectedRoom.participants[0].schedule),
-                    "PPP p"
-                  )
+              {selectedRoom?.participant.schedule
+                ? format(new Date(selectedRoom.participant.schedule), "PPP p")
                 : "N/A"}
             </p>
             <p>
@@ -270,12 +281,12 @@ export default function RoomsPage() {
             </p>
           </div>
           <DialogFooter className="flex-col gap-2 sm:flex-row">
-            {selectedRoom?.participants[0]?.status === "SCHEDULED" && (
+            {selectedRoom?.participant.status === "SCHEDULED" && (
               <Button onClick={() => handleActionButton("start")}>
                 Start Assessment
               </Button>
             )}
-            {selectedRoom?.participants[0]?.status === "IN_PROGRESS" && (
+            {selectedRoom?.participant.status === "IN_PROGRESS" && (
               <Button onClick={() => handleActionButton("join")}>
                 {selectedRoom.metodePelaksanaan === "online"
                   ? "Join Meeting"

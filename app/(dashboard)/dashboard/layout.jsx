@@ -51,12 +51,7 @@ const menuItems = [
     icon: ClipboardCheck,
     roles: ["ADMINISTRATOR"],
   },
-  {
-    name: "Rooms",
-    href: "/dashboard/rooms",
-    icon: Video,
-    roles: ["ADMINISTRATOR", "USER", "EVALUATOR"],
-  },
+
   {
     name: "Reports",
     href: "/dashboard/reports",
@@ -73,6 +68,12 @@ const menuItems = [
     name: "My Schedule",
     href: "/dashboard/my-schedule",
     icon: Calendar,
+    roles: ["ADMINISTRATOR", "USER", "EVALUATOR"],
+  },
+  {
+    name: "Rooms",
+    href: "/dashboard/rooms",
+    icon: Video,
     roles: ["ADMINISTRATOR", "USER", "EVALUATOR"],
   },
   {
