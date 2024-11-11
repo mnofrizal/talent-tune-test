@@ -10,6 +10,7 @@ import {
   Filter,
   ChevronDown,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -47,20 +48,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All");
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
+    nip: "",
     role: "",
-    position: "",
+    jabatan: "",
+    bidang: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,23 +74,44 @@ export default function UsersPage() {
     async function fetchUsers() {
       try {
         setLoading(true);
+        setError(null);
+
         const response = await fetch(
-          `/api/users?search=${search}&role=${
+          `/api/users?search=${encodeURIComponent(search)}&role=${
             roleFilter === "All" ? "" : roleFilter
           }`
         );
 
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || "Failed to fetch users");
+          let errorData;
+          try {
+            errorData = await response.json();
+            console.error("Detailed error:", errorData);
+          } catch (parseError) {
+            console.error("Error parsing error response:", parseError);
+          }
+
+          const errorMessage =
+            errorData?.error ||
+            errorData?.details ||
+            response.statusText ||
+            "Failed to fetch users";
+
+          throw new Error(errorMessage);
         }
 
         const data = await response.json();
         setUsers(data);
       } catch (error) {
         console.error("Failed to fetch users:", error);
-        toast.error(error.message || "Failed to load users");
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred";
+
+        setError(errorMessage);
         setUsers([]);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -132,9 +159,12 @@ export default function UsersPage() {
         setNewUser({
           name: "",
           email: "",
+          phone: "",
           password: "",
+          nip: "",
           role: "",
-          position: "",
+          jabatan: "",
+          bidang: "",
         });
         toast.success("User added successfully");
       } else {
@@ -168,11 +198,11 @@ export default function UsersPage() {
               Add User
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New User</DialogTitle>
               <DialogDescription>
-                Create a new user account with specific role and details
+                Create a new user account with specific details
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleAddUser} className="space-y-4">
@@ -206,6 +236,20 @@ export default function UsersPage() {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="phone" className="text-right">
+                  Phone
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  className="col-span-3"
+                  value={newUser.phone}
+                  onChange={(e) =>
+                    setNewUser((prev) => ({ ...prev, phone: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="password" className="text-right">
                   Password
                 </Label>
@@ -221,6 +265,19 @@ export default function UsersPage() {
                     }))
                   }
                   required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="nip" className="text-right">
+                  NIP
+                </Label>
+                <Input
+                  id="nip"
+                  className="col-span-3"
+                  value={newUser.nip}
+                  onChange={(e) =>
+                    setNewUser((prev) => ({ ...prev, nip: e.target.value }))
+                  }
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -245,18 +302,28 @@ export default function UsersPage() {
                 </Select>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="position" className="text-right">
-                  Position
+                <Label htmlFor="jabatan" className="text-right">
+                  Jabatan
                 </Label>
                 <Input
-                  id="position"
+                  id="jabatan"
                   className="col-span-3"
-                  value={newUser.position}
+                  value={newUser.jabatan}
                   onChange={(e) =>
-                    setNewUser((prev) => ({
-                      ...prev,
-                      position: e.target.value,
-                    }))
+                    setNewUser((prev) => ({ ...prev, jabatan: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="bidang" className="text-right">
+                  Bidang
+                </Label>
+                <Input
+                  id="bidang"
+                  className="col-span-3"
+                  value={newUser.bidang}
+                  onChange={(e) =>
+                    setNewUser((prev) => ({ ...prev, bidang: e.target.value }))
                   }
                 />
               </div>
@@ -276,6 +343,14 @@ export default function UsersPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full max-w-sm">
@@ -309,23 +384,26 @@ export default function UsersPage() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>NIP</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Position</TableHead>
+              <TableHead>Jabatan</TableHead>
+              <TableHead>Bidang</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              [...Array(5)].map((_, index) => (
+              [...Array(1)].map((_, index) => (
                 <TableRow key={index}>
-                  <TableCell colSpan={5} className="text-center">
-                    Loading...
+                  <TableCell colSpan={8} className="text-center">
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin" />
                   </TableCell>
                 </TableRow>
               ))
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   No users found
                 </TableCell>
               </TableRow>
@@ -334,8 +412,11 @@ export default function UsersPage() {
                 <TableRow key={user.id}>
                   <TableCell>{user.name || "N/A"}</TableCell>
                   <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.phone || "N/A"}</TableCell>
+                  <TableCell>{user.nip || "N/A"}</TableCell>
                   <TableCell>{user.role}</TableCell>
-                  <TableCell>{user.position || "N/A"}</TableCell>
+                  <TableCell>{user.jabatan || "N/A"}</TableCell>
+                  <TableCell>{user.bidang || "N/A"}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

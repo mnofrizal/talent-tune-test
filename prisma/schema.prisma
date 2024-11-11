@@ -8,49 +8,60 @@ datasource db {
 }
 
 model User {
-    id                   Int          @id @default(autoincrement())
-    email                String       @unique
-    password             String
-    name                 String?
-    role                 String       @default("USER") // ADMINISTRATOR, USER, EVALUATOR
-    position             String?
-    createdAt            DateTime     @default(now())
-    updatedAt            DateTime     @updatedAt
-    candidateAssessments Assessment[] @relation("CandidateAssessments")
-    evaluatorAssessments Assessment[] @relation("EvaluatorAssessments")
-}
+    id                       Int                     @id @default(autoincrement())
+    email                    String                  @unique
+    phone                    String?
+    password                 String
+    name                     String?
+    nip                      String? // New field for NIP (Nomor Induk Pegawai)
+    role                     String                  @default("USER")
+    jabatan                  String? // Changed from position to Jabatan
+    bidang                   String? // New field for Bidang
+    createdAt                DateTime                @default(now())
+    updatedAt                DateTime                @updatedAt
+    // Relations
+    evaluatorInAssessments   AssessmentEvaluator[]
+    participantInAssessments AssessmentParticipant[]
 
-model Room {
-    id          Int          @id @default(autoincrement())
-    name        String       @unique
-    capacity    Int
-    location    String?
-    assessments Assessment[]
+    @@map("users")
 }
 
 model Assessment {
-    id     Int    @id @default(autoincrement())
-    title  String
-    materi String
-    method String // OFFLINE or ONLINE
-    status String @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+    id                String   @id @default(uuid())
+    judul             String
+    materi            String
+    metodePelaksanaan String
+    ruangan           String?
+    linkOnline        String?
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
 
-    // Offline specific
-    roomId Int?
-    room   Room? @relation(fields: [roomId], references: [id])
+    // Relations
+    notaDinas    String?
+    evaluators   AssessmentEvaluator[]
+    participants AssessmentParticipant[]
 
-    // Online specific
-    virtualMeetingLink String?
+    @@map("assessments")
+}
 
-    // Document upload
-    documentPath String?
+model AssessmentEvaluator {
+    userId       Int
+    assessmentId String
+    user         User       @relation(fields: [userId], references: [id])
+    assessment   Assessment @relation(fields: [assessmentId], references: [id])
 
-    // Relationships
-    candidates User[] @relation("CandidateAssessments")
-    evaluators User[] @relation("EvaluatorAssessments")
+    @@id([userId, assessmentId])
+    @@map("assessment_evaluators")
+}
 
-    // Scheduling
-    scheduledAt DateTime?
-    createdAt   DateTime  @default(now())
-    updatedAt   DateTime  @updatedAt
+model AssessmentParticipant {
+    userId       Int
+    assessmentId String
+    schedule     DateTime
+    status       String     @default("SCHEDULED")
+    user         User       @relation(fields: [userId], references: [id])
+    assessment   Assessment @relation(fields: [assessmentId], references: [id])
+
+    @@id([userId, assessmentId])
+    @@map("assessment_participants")
 }

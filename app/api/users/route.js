@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { cookies } from "next/headers";
-import { jwtVerify, SignJWT } from "jose";
+import { jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
-// Initialize Prisma client
-const prisma = new PrismaClient();
+// Initialize Prisma client with logging
+const prisma = new PrismaClient({
+  log: ["query", "info", "warn", "error"],
+});
 
 // JWT Secret (in production, use environment variable)
 const JWT_SECRET = new TextEncoder().encode(
@@ -19,22 +21,108 @@ async function verifyToken(token) {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return payload;
   } catch (error) {
+    console.error("Token verification error:", error);
     return null;
   }
 }
 
-// Password hashing utility
-async function hashPassword(password) {
-  return await bcrypt.hash(password, 10);
+export async function GET(request) {
+  try {
+    // Verify user authentication
+    const token = cookies().get("auth-token")?.value;
+    if (!token) {
+      console.error("No authentication token found");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const payload = await verifyToken(token);
+    if (!payload) {
+      console.error("Invalid token payload");
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const role = searchParams.get("role");
+    const search = searchParams.get("search") || "";
+
+    console.log("Fetch users params:", { role, search });
+
+    // Prepare filter conditions
+    const whereCondition = {
+      ...(role ? { role } : {}),
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: "insensitive" } },
+              { email: { contains: search, mode: "insensitive" } },
+              { nip: { contains: search, mode: "insensitive" } },
+              { jabatan: { contains: search, mode: "insensitive" } },
+              { bidang: { contains: search, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    };
+
+    console.log("Where condition:", JSON.stringify(whereCondition, null, 2));
+
+    // Fetch users
+    const users = await prisma.user.findMany({
+      where: whereCondition,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        nip: true,
+        role: true,
+        jabatan: true,
+        bidang: true,
+      },
+      take: 50, // Limit results
+    });
+
+    console.log("Fetched users:", users.length);
+
+    return NextResponse.json(users);
+  } catch (error) {
+    console.error("FULL Users fetch error:", error);
+
+    // Log the full error details
+    if (error instanceof Error) {
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+
+    return NextResponse.json(
+      {
+        error: "Failed to fetch users",
+        details:
+          error instanceof Error ? error.message : "Unknown error occurred",
+        fullError: error,
+      },
+      { status: 500 }
+    );
+  } finally {
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      console.error("Error disconnecting Prisma:", disconnectError);
+    }
+  }
 }
 
-// Validation schema for user creation
+// User creation schema
 const userSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["ADMINISTRATOR", "USER", "EVALUATOR"]),
-  position: z.string().optional(),
+  phone: z.string().optional(),
+  nip: z.string().optional(),
+  role: z.string().optional(),
+  jabatan: z.string().optional(),
+  bidang: z.string().optional(),
 });
 
 export async function POST(request) {
@@ -54,50 +142,18 @@ export async function POST(request) {
     }
 
     // Parse and validate request body
-    const userData = await request.json();
+    const body = await request.json();
+    console.log("Request body:", body); // Log the request body for debugging
+    const userData = userSchema.parse(body);
 
-    try {
-      userSchema.parse(userData);
-    } catch (validationError) {
-      return NextResponse.json(
-        {
-          error: "Validation failed",
-          details: validationError.errors,
-        },
-        { status: 400 }
-      );
-    }
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: userData.email },
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        { error: "User with this email already exists" },
-        { status: 409 }
-      );
-    }
-
-    // Hash password
-    const hashedPassword = await hashPassword(userData.password);
-
-    // Create user
+    // Create user in the database
     const newUser = await prisma.user.create({
       data: {
-        name: userData.name,
-        email: userData.email,
+        ...userData,
         password: hashedPassword,
-        role: userData.role,
-        position: userData.position,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        position: true,
       },
     });
 
@@ -108,59 +164,7 @@ export async function POST(request) {
       { error: "Failed to create user", details: error.message },
       { status: 500 }
     );
-  }
-}
-
-export async function GET(request) {
-  try {
-    // Verify user authentication
-    const token = cookies().get("auth-token")?.value;
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const payload = await verifyToken(token);
-    if (!payload) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    // Get query parameters
-    const { searchParams } = new URL(request.url);
-    const role = searchParams.get("role");
-    const search = searchParams.get("search") || "";
-
-    // Prepare filter conditions
-    const whereCondition = {
-      ...(role ? { role } : {}),
-      OR: [
-        { name: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { position: { contains: search, mode: "insensitive" } },
-      ],
-    };
-
-    // Fetch users
-    const users = await prisma.user.findMany({
-      where: whereCondition,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        position: true,
-      },
-      take: 50, // Limit results
-    });
-
-    return NextResponse.json(users);
-  } catch (error) {
-    console.error("Users fetch error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch users", details: error.message },
-      { status: 500 }
-    );
   } finally {
-    // Ensure Prisma client is disconnected
     await prisma.$disconnect();
   }
 }

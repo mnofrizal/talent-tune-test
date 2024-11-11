@@ -1,7 +1,51 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { PrismaClient } from "@prisma/client";
 import { cookies } from "next/headers";
-import { verifyToken } from "@/lib/auth";
+import { jwtVerify } from "jose";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+
+// Initialize Prisma client
+const prisma = new PrismaClient();
+
+// JWT Secret (in production, use environment variable)
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || "default-secret-key-change-it"
+);
+
+// Token verification utility
+async function verifyToken(token) {
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    return payload;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Password hashing utility
+async function hashPassword(password) {
+  return await bcrypt.hash(password, 10);
+}
+
+// Validation schema for user update
+const userUpdateSchema = z
+  .object({
+    name: z.string().min(2, "Name must be at least 2 characters").optional(),
+    email: z.string().email("Invalid email address").optional(),
+    phone: z.string().optional(),
+    password: z
+      .string()
+      .min(6, "Password must be at least 6 characters")
+      .optional(),
+    nip: z.string().optional(),
+    role: z.enum(["ADMINISTRATOR", "USER", "EVALUATOR"]).optional(),
+    jabatan: z.string().optional(),
+    bidang: z.string().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be updated",
+  });
 
 export async function DELETE(request, { params }) {
   try {
@@ -57,6 +101,8 @@ export async function DELETE(request, { params }) {
       { error: "Failed to delete user", details: error.message },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
@@ -80,33 +126,39 @@ export async function PUT(request, { params }) {
     const userData = await request.json();
 
     // Validate input
-    if (
-      !userData.name &&
-      !userData.email &&
-      !userData.role &&
-      !userData.position
-    ) {
+    try {
+      userUpdateSchema.parse(userData);
+    } catch (validationError) {
       return NextResponse.json(
-        { error: "No update data provided" },
+        {
+          error: "Validation failed",
+          details: validationError.errors,
+        },
         { status: 400 }
       );
+    }
+
+    // Prepare update data
+    const updateData = { ...userData };
+
+    // Hash password if provided
+    if (updateData.password) {
+      updateData.password = await hashPassword(updateData.password);
     }
 
     // Update user
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: {
-        ...(userData.name && { name: userData.name }),
-        ...(userData.email && { email: userData.email }),
-        ...(userData.role && { role: userData.role }),
-        ...(userData.position && { position: userData.position }),
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,
         email: true,
+        phone: true,
+        nip: true,
         role: true,
-        position: true,
+        jabatan: true,
+        bidang: true,
       },
     });
 
@@ -117,5 +169,7 @@ export async function PUT(request, { params }) {
       { error: "Failed to update user", details: error.message },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
