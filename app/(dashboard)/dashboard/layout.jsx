@@ -14,19 +14,73 @@ import {
   Menu,
   X,
   Calendar,
+  LogOut,
+  UserPlus,
+  PenLine,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/use-auth";
 
-const sidebarItems = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Candidates", href: "/dashboard/candidates", icon: Users },
-  { name: "Assessments", href: "/dashboard/assessments", icon: ClipboardCheck },
-  { name: "Rooms", href: "/dashboard/rooms", icon: Video },
-  { name: "Reports", href: "/dashboard/reports", icon: BarChart2 },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
-  { name: "My Schedule", href: "/dashboard/my-schedule", icon: Calendar },
+// Define menu items with role restrictions
+const menuItems = [
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    roles: ["ADMINISTRATOR", "USER", "EVALUATOR"],
+  },
+  {
+    name: "Users",
+    href: "/dashboard/users",
+    icon: UserPlus,
+    roles: ["ADMINISTRATOR"],
+  },
+  {
+    name: "Candidates",
+    href: "/dashboard/candidates",
+    icon: Users,
+    roles: ["ADMINISTRATOR"],
+  },
+  {
+    name: "Assessments",
+    href: "/dashboard/assessments",
+    icon: ClipboardCheck,
+    roles: ["ADMINISTRATOR"],
+  },
+  {
+    name: "Rooms",
+    href: "/dashboard/rooms",
+    icon: Video,
+    roles: ["ADMINISTRATOR", "USER", "EVALUATOR"],
+  },
+  {
+    name: "Reports",
+    href: "/dashboard/reports",
+    icon: BarChart2,
+    roles: ["ADMINISTRATOR"],
+  },
+  {
+    name: "Settings",
+    href: "/dashboard/settings",
+    icon: Settings,
+    roles: ["ADMINISTRATOR"],
+  },
+  {
+    name: "My Schedule",
+    href: "/dashboard/my-schedule",
+    icon: Calendar,
+    roles: ["ADMINISTRATOR", "USER", "EVALUATOR"],
+  },
+  {
+    name: "Penilaian",
+    href: "/dashboard/settings",
+    icon: PenLine,
+    roles: ["EVALUATOR"],
+  },
 ];
 
 const sidebarVariants = {
@@ -50,6 +104,7 @@ export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const sidebarRef = useRef(null);
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     setIsMounted(true);
@@ -89,7 +144,33 @@ export default function DashboardLayout({ children }) {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        router.push("/auth/login");
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   const showSidebar = isMounted && (!isMobile || sidebarOpen);
+
+  // Filter menu items based on user role
+  const filteredMenuItems = loading
+    ? menuItems.filter((item) => item.roles.includes("USER")) // Show basic menu during loading
+    : menuItems.filter((item) => !user?.role || item.roles.includes(user.role));
+
+  // Render loading state or error state if not authenticated
+  if (!isMounted) return null;
+  if (!loading && !user) {
+    router.push("/auth/login");
+    return null;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -128,32 +209,102 @@ export default function DashboardLayout({ children }) {
                   </Button>
                 )}
               </div>
-              <nav className="flex flex-col gap-1 p-4">
-                <AnimatePresence>
-                  {sidebarItems.map((item, index) => (
+
+              {/* Navigation Menu */}
+              <nav className="flex flex-1 flex-col gap-1 p-4">
+                <AnimatePresence mode="wait">
+                  {loading ? (
+                    // Show loading skeleton during loading
                     <motion.div
-                      key={item.name}
-                      variants={linkVariants}
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                      transition={{ delay: index * 0.1 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
                     >
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100",
-                          pathname === item.href && "bg-gray-100 font-medium"
-                        )}
-                        onClick={() => handleNavigation(item.href)}
-                      >
-                        <item.icon className="h-5 w-5" />
-                        {item.name}
-                      </Button>
+                      {[...Array(4)].map((_, i) => (
+                        <div key={i} className="px-3 py-2">
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="h-5 w-5" />
+                            <Skeleton className="h-4 w-24" />
+                          </div>
+                        </div>
+                      ))}
                     </motion.div>
-                  ))}
+                  ) : (
+                    // Show actual menu items when loaded
+                    filteredMenuItems.map((item, index) => (
+                      <motion.div
+                        key={item.name}
+                        variants={linkVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <Button
+                          variant="ghost"
+                          className={cn(
+                            "w-full justify-start gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100",
+                            pathname === item.href && "bg-gray-100 font-medium"
+                          )}
+                          onClick={() => handleNavigation(item.href)}
+                        >
+                          <item.icon className="h-5 w-5" />
+                          {item.name}
+                        </Button>
+                      </motion.div>
+                    ))
+                  )}
                 </AnimatePresence>
               </nav>
+
+              {/* User Profile Section */}
+              <AnimatePresence mode="wait">
+                {loading ? (
+                  <div className="border-t p-4">
+                    <div className="mb-3 flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <div className="flex-1">
+                        <Skeleton className="mb-1 h-4 w-24" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-9 w-full" />
+                  </div>
+                ) : (
+                  user && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="border-t p-4"
+                    >
+                      <div className="mb-3 flex items-center gap-3">
+                        <Avatar>
+                          <AvatarFallback>
+                            {user.name?.charAt(0) || user.email.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-gray-900">
+                            {user.name || user.email}
+                          </p>
+                          <p className="truncate text-xs text-gray-500">
+                            {user.role}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start gap-3 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="h-5 w-5" />
+                        Logout
+                      </Button>
+                    </motion.div>
+                  )
+                )}
+              </AnimatePresence>
             </div>
           </motion.aside>
         )}
@@ -180,9 +331,6 @@ export default function DashboardLayout({ children }) {
           <div className="ml-auto flex items-center gap-4">
             <Button variant="ghost" size="sm">
               Help
-            </Button>
-            <Button variant="ghost" size="sm">
-              Account
             </Button>
           </div>
         </motion.header>

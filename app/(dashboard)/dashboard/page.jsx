@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  Plus,
   User,
   Users,
 } from "lucide-react";
@@ -15,6 +16,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NewAssessmentDialog } from "@/components/new-assesment";
+import { useAuth } from "@/hooks/use-auth";
 
 const statusCards = [
   {
@@ -33,7 +35,7 @@ const statusCards = [
   },
   {
     title: "Completed",
-    count: 284,
+    count: 24,
     subtitle: "Total completed assessments",
     icon: <BarChart2 className="h-5 w-5 text-green-600" />,
     bgColor: "bg-green-50",
@@ -56,11 +58,18 @@ const upcomingAssessments = [
 ];
 
 export default function DashboardPage() {
+  const { user, loading } = useAuth();
   const currentDate = new Date();
   const currentMonth = currentDate.toLocaleString("default", {
     month: "long",
     year: "numeric",
   });
+
+  // Determine the assessment link based on user role
+  const assessmentLink =
+    user?.role === "ADMINISTRATOR"
+      ? "/dashboard/assessments"
+      : "/dashboard/my-schedule";
 
   return (
     <div className="space-y-6 p-6">
@@ -70,7 +79,10 @@ export default function DashboardPage() {
         transition={{ duration: 0.5 }}
         className="space-y-2"
       >
-        <h1 className="text-3xl font-bold">Welcome back, Admin</h1>
+        <h1 className="text-3xl font-bold">
+          Welcome back,{" "}
+          {loading ? "..." : user?.name || user?.email?.split("@")[0] || "User"}
+        </h1>
         <p className="text-muted-foreground">
           Here's an overview of your assessment activities
         </p>
@@ -82,7 +94,14 @@ export default function DashboardPage() {
         transition={{ duration: 0.5, delay: 0.1 }}
         className="flex gap-4"
       >
-        <NewAssessmentDialog />
+        <Link href={assessmentLink}>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            {user?.role === "ADMINISTRATOR"
+              ? "Go To Assessment"
+              : "View Schedule"}
+          </Button>
+        </Link>
         <Button variant="outline">View Reports</Button>
       </motion.div>
 

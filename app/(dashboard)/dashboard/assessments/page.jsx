@@ -45,58 +45,71 @@ import { NewAssessmentDialog } from "@/components/new-assesment";
 const assessments = [
   {
     id: 1,
-    positionFor: "Frontend Developer",
+    positionFor: "MANAGER SINTANG POWER GENERATION UNIT",
     name: "John Doe",
     nip: "12345",
-    position: "Software Engineer",
+    position: "JUNIOR TECHNICIAN OPERASI CONTROL ROOM UNIT 2 (D) BLT POMU",
     schedule: "2024-03-15 10:00",
     status: "Scheduled",
   },
   {
     id: 2,
-    positionFor: "UX Designer",
+    positionFor: "KEPALA SATUAN PROJECT MANAGEMENT",
     name: "Jane Smith",
     nip: "23456",
-    position: "UI/UX Designer",
+    position: "JUNIOR TECHNICIAN OPERASI CONTROL ROOM UNIT 2 (A) BLT POMU",
     schedule: "2024-03-16 14:00",
     status: "In Progress",
   },
   {
     id: 3,
-    positionFor: "Project Manager",
+    positionFor: "ASSISTANT MANAGER PENGADAAN BARANG DAN JASA UNIT 1-4 SLA PGU",
     name: "Mike Johnson",
     nip: "34567",
-    position: "Team Lead",
+    position: "JUNIOR TECHNICIAN OPERASI CONTROL ROOM UNIT 2 (C) BLB PGU",
     schedule: "2024-03-17 11:00",
     status: "Completed",
   },
   {
     id: 4,
-    positionFor: "Backend Developer",
+    positionFor: "ASSISTANT MANAGER AKUNTANSI DAN ANGGARAN BLI PGU",
     name: "Emily Brown",
     nip: "45678",
-    position: "Software Engineer",
+    position: "JUNIOR TECHNICIAN OPERASI CONTROL ROOM UNIT 1 (A) BLB PGU",
     schedule: "2024-03-18 09:00",
     status: "Scheduled",
   },
   {
     id: 5,
-    positionFor: "Data Analyst",
+    positionFor: "ASSISTANT MANAGER PEMELIHARAAN LISTRIK UNIT 5-7 SLA PGU",
     name: "Chris Wilson",
     nip: "56789",
-    position: "Business Analyst",
+    position: "JUNIOR TECHNICIAN OPERASI CONTROL ROOM UNIT 1 (D) BLB PGU",
     schedule: "2024-03-19 13:00",
+    status: "In Progress",
+  },
+  {
+    id: 6,
+    positionFor: "OFFICER KNOWLEDGE MANAGEMENT DAN INOVASI SLA PGU",
+    name: "Sarah Davis",
+    nip: "67890",
+    position: "JUNIOR TECHNICIAN OPERASI CONTROL ROOM UNIT 2 (D) BLB PGU",
+    schedule: "2024-03-20 15:00",
+    status: "Scheduled",
+  },
+  {
+    id: 7,
+    positionFor: "MANAGER SINTANG POWER GENERATION UNIT",
+    name: "Alex Turner",
+    nip: "78901",
+    position: "JUNIOR TECHNICIAN OPERASI CONTROL ROOM UNIT 2 (C) BLT POMU",
+    schedule: "2024-03-21 10:30",
     status: "In Progress",
   },
 ];
 
-const departments = [
-  "All",
-  "Engineering",
-  "Design",
-  "Management",
-  "Data Science",
-];
+const departments = ["All", "BLT POMU", "BLB PGU", "SLA PGU", "BLI PGU"];
+
 const statuses = ["All", "Scheduled", "In Progress", "Completed"];
 
 export default function AssessmentsPage() {
@@ -109,7 +122,8 @@ export default function AssessmentsPage() {
     (assessment) =>
       (assessment.name.toLowerCase().includes(search.toLowerCase()) ||
         assessment.nip.includes(search) ||
-        assessment.positionFor.toLowerCase().includes(search.toLowerCase())) &&
+        assessment.positionFor.toLowerCase().includes(search.toLowerCase()) ||
+        assessment.position.toLowerCase().includes(search.toLowerCase())) &&
       (department === "All" || assessment.position.includes(department)) &&
       (status === "All" || assessment.status === status)
   );
@@ -173,61 +187,67 @@ export default function AssessmentsPage() {
         </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Position For</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>NIP</TableHead>
-            <TableHead>Position</TableHead>
-            <TableHead>Assessment Schedule</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredAssessments.map((assessment) => (
-            <TableRow key={assessment.id}>
-              <TableCell>{assessment.positionFor}</TableCell>
-              <TableCell className="font-medium">{assessment.name}</TableCell>
-              <TableCell>{assessment.nip}</TableCell>
-              <TableCell>{assessment.position}</TableCell>
-              <TableCell>{assessment.schedule}</TableCell>
-              <TableCell>{assessment.status}</TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem>
-                      <Eye className="mr-2 h-4 w-4" />
-                      <span>View Profile</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <PlayCircle className="mr-2 h-4 w-4" />
-                      <span>Start Assessment</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Video className="mr-2 h-4 w-4" />
-                      <span>Join Assessment</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <Download className="mr-2 h-4 w-4" />
-                      <span>Download Report</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Position For</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>NIP</TableHead>
+              <TableHead>Position</TableHead>
+              <TableHead>Assessment Schedule</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {filteredAssessments.map((assessment) => (
+              <TableRow key={assessment.id}>
+                <TableCell className="max-w-[300px] truncate">
+                  {assessment.positionFor}
+                </TableCell>
+                <TableCell className="font-medium">{assessment.name}</TableCell>
+                <TableCell>{assessment.nip}</TableCell>
+                <TableCell className="max-w-[300px] truncate">
+                  {assessment.position}
+                </TableCell>
+                <TableCell>{assessment.schedule}</TableCell>
+                <TableCell>{assessment.status}</TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem>
+                        <Eye className="mr-2 h-4 w-4" />
+                        <span>View Profile</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        <span>Start Assessment</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Video className="mr-2 h-4 w-4" />
+                        <span>Join Assessment</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem>
+                        <Download className="mr-2 h-4 w-4" />
+                        <span>Download Report</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </motion.div>
   );
 }

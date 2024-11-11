@@ -27,7 +27,7 @@ const schedules = {
       date: new Date(2024, 1, 28),
       startTime: "09:00",
       endTime: "09:30",
-      title: "30min Assessment Meeting with John",
+      title: "Fit and Proper Assessment",
       location: "Online",
       participants: [
         { name: "John Doe", image: "https://i.pravatar.cc/150?img=1" },
@@ -37,27 +37,12 @@ const schedules = {
       roomId: "room-1",
     },
     {
-      id: 2,
-      date: new Date(2024, 1, 29),
-      startTime: "11:15",
-      endTime: "11:45",
-      title: "30min Assessment Meeting with Team",
-      location: "Online",
-      participants: [
-        { name: "Olivia Brown", image: "https://i.pravatar.cc/150?img=3" },
-        { name: "Liam Wilson", image: "https://i.pravatar.cc/150?img=4" },
-        { name: "Alban Jones", image: "https://i.pravatar.cc/150?img=5" },
-      ],
-      status: "Proses Fit and Proper",
-      roomId: "room-2",
-    },
-    {
       id: 3,
       date: new Date(2024, 1, 30),
-      startTime: "15:20",
-      endTime: "16:20",
+      startTime: "14:20",
+      endTime: "15:20",
       title: "Leadership Assessment",
-      location: "Meeting Room 1, Floor 3",
+      location: "Ruang Rapat IHT",
       participants: [
         { name: "Emma Davis", image: "https://i.pravatar.cc/150?img=6" },
         { name: "James Miller", image: "https://i.pravatar.cc/150?img=7" },
@@ -69,7 +54,6 @@ const schedules = {
     },
   ],
   pending: [],
-  recurring: [],
   past: [],
   cancelled: [],
 };
@@ -140,7 +124,6 @@ export default function MySchedulePage() {
         <TabsList className="">
           <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="recurring">Recurring</TabsTrigger>
           <TabsTrigger value="past">Past</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
         </TabsList>

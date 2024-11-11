@@ -1,0 +1,56 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = "file:./dev.db"
+}
+
+model User {
+    id                   Int          @id @default(autoincrement())
+    email                String       @unique
+    password             String
+    name                 String?
+    role                 String       @default("USER") // ADMINISTRATOR, USER, EVALUATOR
+    position             String?
+    createdAt            DateTime     @default(now())
+    updatedAt            DateTime     @updatedAt
+    candidateAssessments Assessment[] @relation("CandidateAssessments")
+    evaluatorAssessments Assessment[] @relation("EvaluatorAssessments")
+}
+
+model Room {
+    id          Int          @id @default(autoincrement())
+    name        String       @unique
+    capacity    Int
+    location    String?
+    assessments Assessment[]
+}
+
+model Assessment {
+    id     Int    @id @default(autoincrement())
+    title  String
+    materi String
+    method String // OFFLINE or ONLINE
+    status String @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+
+    // Offline specific
+    roomId Int?
+    room   Room? @relation(fields: [roomId], references: [id])
+
+    // Online specific
+    virtualMeetingLink String?
+
+    // Document upload
+    documentPath String?
+
+    // Relationships
+    candidates User[] @relation("CandidateAssessments")
+    evaluators User[] @relation("EvaluatorAssessments")
+
+    // Scheduling
+    scheduledAt DateTime?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+}
