@@ -4,7 +4,8 @@ import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth";
 
 async function authenticateRequest(request) {
-  const token = cookies().get("auth-token")?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get("auth-token")?.value;
   if (!token) {
     return { error: "Unauthorized", status: 401 };
   }

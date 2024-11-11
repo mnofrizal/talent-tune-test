@@ -29,7 +29,8 @@ async function verifyToken(token) {
 export async function GET(request) {
   try {
     // Verify user authentication
-    const token = cookies().get("auth-token")?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth-token")?.value;
     if (!token) {
       console.error("No authentication token found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -128,7 +129,8 @@ const userSchema = z.object({
 export async function POST(request) {
   try {
     // Verify user authentication
-    const token = cookies().get("auth-token")?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth-token")?.value;
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

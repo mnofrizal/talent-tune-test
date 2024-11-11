@@ -50,7 +50,8 @@ const userUpdateSchema = z
 export async function DELETE(request, { params }) {
   try {
     // Verify user authentication
-    const token = cookies().get("auth-token")?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth-token")?.value;
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -109,7 +110,8 @@ export async function DELETE(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     // Verify user authentication
-    const token = cookies().get("auth-token")?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth-token")?.value;
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
